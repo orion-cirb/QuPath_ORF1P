@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module type="JAVA_MODULE" version="4">
+  <component name="NewModuleRootManager" inherit-compiler-output="true">
+    <exclude-output />
+    <content url="file://$MODULE_DIR$/../scripts">
+      <sourceFolder url="file://$MODULE_DIR$/../scripts" isTestSource="false" />
+    </content>
+    <orderEntry type="jdk" jdkName="16" jdkType="JavaSDK" />
+    <orderEntry type="sourceFolder" forTests="false" />
+    <orderEntry type="library" name="groovy-4.0.0" level="project" />
+    <orderEntry type="module-library">
+      <library>
+        <CLASSES>
+          <root url="file:///opt/QuPath/lib/app" />
+        </CLASSES>
+        <JAVADOC />
+        <NATIVE>
+          <root url="file:///opt/QuPath/lib/app" />
+        </NATIVE>
+        <SOURCES>
+          <root url="file://$MODULE_DIR$/../../../../qupath/qupath-app/src/main/java" />
+        </SOURCES>
+        <jarDirectory url="file:///opt/QuPath/lib/app" recursive="false" />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library">
+      <library>
+        <CLASSES>
+          <root url="jar://$USER_HOME$/QuPath/v0.3/extensions/qupath-extension-stardist-0.3.0.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+  </component>
+</module>
