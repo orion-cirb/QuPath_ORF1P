@@ -2,8 +2,8 @@
 <module type="JAVA_MODULE" version="4">
   <component name="NewModuleRootManager" inherit-compiler-output="true">
     <exclude-output />
-    <content url="file://$MODULE_DIR$/../scripts">
-      <sourceFolder url="file://$MODULE_DIR$/../scripts" isTestSource="false" />
+    <content url="file://$MODULE_DIR$/../OFR1P/scripts">
+      <sourceFolder url="file://$MODULE_DIR$/../OFR1P/scripts" isTestSource="false" packagePrefix="src" />
     </content>
     <orderEntry type="jdk" jdkName="16" jdkType="JavaSDK" />
     <orderEntry type="sourceFolder" forTests="false" />
@@ -18,7 +18,7 @@
           <root url="file:///opt/QuPath/lib/app" />
         </NATIVE>
         <SOURCES>
-          <root url="file://$MODULE_DIR$/../../../../qupath/qupath-app/src/main/java" />
+          <root url="file://$USER_HOME$/qupath/qupath-app/src/main/java" />
         </SOURCES>
         <jarDirectory url="file:///opt/QuPath/lib/app" recursive="false" />
       </library>
