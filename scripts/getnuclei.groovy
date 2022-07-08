@@ -1,10 +1,30 @@
+//------------------------------ PARAMETERS TO TUNE ------------------------------------------------------------------//
+// DAPI cells
+minCellSizeDapi = 20
+minIntensityDapi = 1.2 // DAPI cell mean intensity > minIntensityDapi * background mean intensity in DAPI channel
+
+// EGFP cells
+minCellSizeEgfp = 20
+minIntensityEgfp = 1.4
+
+// Cy3 cells
+minCellSizeCy3 = 40
+minIntensityCy3 = 1.4
+
+// Cy5 cells
+minCellSizeCy5 = 40
+minIntensityCy5 = 1.2
+//--------------------------------------------------------------------------------------------------------------------//
+
+
+// Imports
 import org.apache.commons.io.FilenameUtils
 import qupath.lib.objects.classes.PathClassFactory
+import qupath.lib.roi.RoiTools
 
 import static qupath.lib.gui.scripting.QPEx.*
 import qupath.ext.stardist.StarDist2D
 import qupath.lib.objects.*
-import qupath.lib.geom.Point2
 import qupath.lib.gui.dialogs.Dialogs
 
 // Init project
@@ -25,7 +45,8 @@ def resultsFile = new File(buildFilePath(resultsDir, 'Results.csv'))
 resultsFile.createNewFile()
 def resHeaders = 'Image name\tAnnotation name\tArea (um2)\tNb DAPI\tNb EGFP\tEGFP mean intensity' +
         '\tNb EGFP-DAPI\tEGFP-DAPI mean intensity\tNb Cy3\tCy3 mean intensity\tNb Cy3-DAPI\tCy3-DAPI mean intensity\tNb Cy5\tCy5 mean intensity' +
-        '\tNb Cy5-DAPI\tCy5-DAPI mean intensity\tNb Cy3-Cy5-DAPI\n'
+        '\tNb Cy5-DAPI\tCy5-DAPI mean intensity\tNb Cy3-Cy5-DAPI\tCy3-Cy5-DAPI mean intensity in Cy3 channel\tNb Cy5-Cy3-DAPI\tCy5-Cy3-DAPI mean intensity in Cy5 channel' +
+        '\tNb Cy3-EGFP-DAPI\t\'Nb Cy5-EGFP-DAPI\n'
 resultsFile.write(resHeaders)
 
 // Define ClassPaths
@@ -41,6 +62,7 @@ def buildStarDistModel(pathModel, threshold, channel, cellClass) {
             .normalizePercentiles(1, 99)       // Percentile normalization
             .pixelSize(0.5)           // Resolution for detection
             .channels(channel)
+            .constrainToParent(false)
             .measureShape()                  // Add shape measurements
             .measureIntensity()              // Add intensity measurements
             .classify(cellClass)
@@ -48,37 +70,36 @@ def buildStarDistModel(pathModel, threshold, channel, cellClass) {
 }
 
 // Detect cells in a specific annotation and channel
-def detectCells(imageData, an, channel, hierarchy, pathModel, probThreshold, cellsClass, pixelWidth, minCellSize, bgInt, minIntensityPercentage) {
+def detectCells(imageData, an, channel, pathModel, probThreshold, cellsClass, pixelWidth, minCellSize, bgInt, minIntensityPercentage) {
     println '--- Finding ' + channel + ' cells ---'
     println 'Background median intensity in ' + channel + ' channel = ' + bgInt
     def stardist = buildStarDistModel(pathModel, probThreshold, channel, cellsClass)
     stardist.detectObjects(imageData, an, true)
     def cells = getDetectionObjects().findAll{it.getPathClass() == cellsClass
             && it.getROI().getScaledArea(pixelWidth, pixelWidth) > minCellSize
-            && it.getMeasurementList().getMeasurementValue(channel +': Median') > (minIntensityPercentage*bgInt)}
-    cells.each{hierarchy.addPathObjectBelowParent(an, it, true)}
+            && it.getMeasurementList().getMeasurementValue(channel +': Median') > (minIntensityPercentage*bgInt)
+            && an.getROI().contains(it.getROI().getCentroidX(), it.getROI().getCentroidY())}
     println 'Nb ' + channel + ' cells = ' + cells.size() + ' (' + (getDetectionObjects().findAll{it.getPathClass() == cellsClass}.size() - cells.size()) + ' filtered out)'
     return cells
 }
 
 // Get colocalized cells among two cell populations
- def coloc(cell1, cell2, cal) {
-     def cellColoc = []
-     for (c1 in cell1) {
-         def roiC1 = c1.getROI()
-         def p1 = new Point2(roiC1.getCentroidX(), roiC1.getCentroidY())
-         for (c2 in cell2) {
-             def roiC2 = c2.getROI()
-             def p2 = new Point2(roiC2.getCentroidX(), roiC2.getCentroidY())
-             def dist = p1.distance(p2)  * cal.getAveragedPixelSizeMicrons()
-             if (dist < 5) {
-                 cellColoc << c1
-             }
-         }
-     }
-     fireHierarchyUpdate()
-     return(cellColoc)
- }
+def coloc(cell1, cell2) {
+    def tool = new RoiTools()
+    def cellColoc = []
+    for (c1 in cell1) {
+        def roiC1 = c1.getROI()
+        def measurementsC1 = c1.getMeasurementList()
+        for (c2 in cell2) {
+            def roiC2 = c2.getROI()
+            if (tool.areaContains(roiC1, roiC2.getCentroidX(), roiC2.getCentroidY())) {
+                cellColoc << PathObjectTools.transformObject(c1, null, true)
+                break
+            }
+        }
+    }
+    return(cellColoc)
+}
 
 // Get mean intensity of a population of objects
 def getObjectsIntensity(cells, channel, bgInt) {
@@ -151,48 +172,66 @@ for (entry in project.getImageList()) {
         def bgCy5Int = bg.getMeasurementList().getMeasurementValue('ROI: 2.00 µm per pixel: Cy5: Median')
 
         // Detect cells in each channel
-        def dapiCells = detectCells(imageData, an, 'DAPI', hierarchy, pathModel, 0.6, dapiCellsClass,
-                pixelWidth, 20, bgDapiInt, 1.2)
-        def egfpCells = detectCells(imageData, an, 'EGFP', hierarchy, pathModel, 0.4, egfpCellsClass,
-                pixelWidth, 20, bgEgfpInt, 1.4)
-        def cy3Cells = detectCells(imageData, an, 'Cy3', hierarchy, pathModel, 0.4, cy3CellsClass,
-                pixelWidth, 40, bgCy3Int, 1.4)
-        def cy5Cells = detectCells(imageData, an, 'Cy5', hierarchy, pathModel, 0.6, cy5CellsClass,
-                pixelWidth, 40, bgCy5Int, 1.2)
+        clearAllObjects()
+        addObject(an)
+        def dapiCells = detectCells(imageData, an, 'DAPI', pathModel, 0.6, dapiCellsClass,
+                pixelWidth, minCellSizeDapi, bgDapiInt, minIntensityDapi)
+        def egfpCells = detectCells(imageData, an, 'EGFP', pathModel, 0.4, egfpCellsClass,
+                pixelWidth, minCellSizeEgfp, bgEgfpInt, minIntensityEgfp)
+        def cy3Cells = detectCells(imageData, an, 'Cy3', pathModel, 0.4, cy3CellsClass,
+                pixelWidth, minCellSizeCy3, bgCy3Int, minIntensityCy3)
+        def cy5Cells = detectCells(imageData, an, 'Cy5', pathModel, 0.6, cy5CellsClass,
+                pixelWidth, minCellSizeCy5, bgCy5Int, minIntensityCy5)
 
         println '--- Colocalization ---'
         // Find EGFP cells colocalized with DAPI nuclei
-        def egfpDapiCells = coloc(egfpCells, dapiCells, cal)
+        def egfpDapiCells = coloc(egfpCells, dapiCells)
         print(egfpDapiCells.size() + '/' + egfpCells.size() + ' EGFP cells colocalized with DAPI nuclei')
 
         // Find Cy3 cells colocalized with DAPI nuclei
-        def cy3DapiCells = coloc(cy3Cells, dapiCells, cal)
+        def cy3DapiCells = coloc(cy3Cells, dapiCells)
         print(cy3DapiCells.size() + '/' + cy3Cells.size() + ' Cy3 cells colocalized with DAPI nuclei')
 
         // Find Cy5 cells colocalized with DAPI nuclei
-        def cy5DapiCells = coloc(cy5Cells, dapiCells, cal)
+        def cy5DapiCells = coloc(cy5Cells, dapiCells)
         print(cy5DapiCells.size() + '/' + cy5Cells.size() + ' Cy5 cells colocalized with DAPI nuclei')
 
         // Find Cy3-DAPI cells colocalized with Cy5-DAPI cells
-        def cy3Cy5Cells = coloc(cy3DapiCells, cy5DapiCells, cal)
-        print(cy3Cy5Cells.size() + '/' + cy3Cells.size() + ' Cy3-DAPI cells colocalized with Cy5-DAPI cells')
+        def cy3Cy5Cells = coloc(cy3DapiCells, cy5DapiCells)
+        print(cy3Cy5Cells.size() + '/' + cy3DapiCells.size() + ' Cy3-DAPI cells colocalized with Cy5-DAPI cells')
+
+        // Find Cy5-DAPI cells colocalized with Cy3-DAPI cells
+        def cy5Cy3Cells = coloc(cy5DapiCells, cy3DapiCells)
+        print(cy5Cy3Cells.size() + '/' + cy5DapiCells.size() + ' Cy5-DAPI cells colocalized with Cy3-DAPI cells')
+
+        // Find EGFP-DAPI cells colocalized with Cy3-DAPI cells
+        def egfpCy3Cells = coloc(egfpDapiCells, cy3DapiCells)
+        print(egfpCy3Cells.size() + '/' + egfpDapiCells.size() + ' EGFP-DAPI cells colocalized with Cy3-DAPI cells')
+
+        // Find EGFP-DAPI cells colocalized with Cy3-DAPI cells
+        def egfpCy5Cells = coloc(egfpDapiCells, cy5DapiCells)
+        print(egfpCy5Cells.size() + '/' + egfpDapiCells.size() + ' EGFP-DAPI cells colocalized with Cy5-DAPI cells')
 
         // Save results
         def results = imgNameWithOutExt + '\t' + an.getName() + '\t' + an.getROI().getScaledArea(pixelWidth, pixelWidth) + '\t' + dapiCells.size() +
                 '\t' + egfpCells.size() + '\t'+ getObjectsIntensity(egfpCells, 'EGFP', bgEgfpInt) + '\t' + egfpDapiCells.size() + '\t' + getObjectsIntensity(egfpDapiCells, 'EGFP', bgEgfpInt) +
                 '\t' + cy3Cells.size() + '\t' + getObjectsIntensity(cy3Cells, 'Cy3', bgCy3Int) + '\t' + cy3DapiCells.size() + '\t' + getObjectsIntensity(cy3DapiCells, 'Cy3', bgCy3Int) +
                 '\t' + cy5Cells.size() + '\t' + getObjectsIntensity(cy5Cells, 'Cy5', bgCy5Int) + '\t' + cy5DapiCells.size() + '\t' + getObjectsIntensity(cy5DapiCells, 'Cy5', bgCy5Int) +
-                '\t' + cy3Cy5Cells.size() + '\n'
+                '\t' + cy3Cy5Cells.size() + '\t' + getObjectsIntensity(cy3Cy5Cells, 'Cy3', bgCy3Int) + '\t' + cy5Cy3Cells.size() + '\t' + getObjectsIntensity(cy5Cy3Cells, 'Cy5', bgCy5Int) +
+                '\t' + egfpCy3Cells.size() + '\t' + egfpCy5Cells.size()  + '\n'
         resultsFile << results
 
+        an.clearPathObjects()
+        an.addPathObjects(dapiCells)
+        an.addPathObjects(egfpDapiCells)
+        an.addPathObjects(cy3DapiCells)
+        an.addPathObjects(cy5DapiCells)
+        fireHierarchyUpdate()
+
         // Save detections
-        clearDetections()
+        clearAllObjects()
         addObject(bg)
-        addObjects(dapiCells)
-        addObjects(egfpDapiCells)
-        addObjects(cy3DapiCells)
-        addObjects(cy5DapiCells)
-        resolveHierarchy()
+        addObject(an)
         saveAnnotations(buildFilePath(resultsDir, imgNameWithOutExt+"_"+an.getName()))
         println ''
     }

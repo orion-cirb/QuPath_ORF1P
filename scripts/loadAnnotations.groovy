@@ -20,5 +20,5 @@ resultsDir.eachFileMatch(p) {file ->
         addObjects(annotations)
     }
 }
-
+resolveHierarchy()
 
