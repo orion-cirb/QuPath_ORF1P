@@ -12,7 +12,7 @@ clearAllObjects()
 
 // Find annotations files for current image
 def p = ~/${imgNameWithOutExt}.*\.annot/
-def resultsDir = new File(buildFilePath(imageDir+'/../Results'))
+def resultsDir = new File(buildFilePath(imageDir+'/Results'))
 resultsDir.eachFileMatch(p) {file ->
     new File(file.path).withObjectInputStream {
         def annotations = it.readObject()

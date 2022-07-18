@@ -39,7 +39,7 @@ if (pathModel == null) {
 def imageDir = new File(project.getImageList()[0].getUris()[0]).getParent()
 
 // Create results file and write headers
-def resultsDir = buildFilePath(imageDir, '/../Results')
+def resultsDir = buildFilePath(imageDir, '/Results')
 if (!fileExists(resultsDir)) mkdirs(resultsDir)
 def resultsFile = new File(buildFilePath(resultsDir, 'Results.csv'))
 resultsFile.createNewFile()
@@ -84,15 +84,15 @@ def detectCells(imageData, an, channel, pathModel, probThreshold, cellsClass, pi
 }
 
 // Get colocalized cells among two cell populations
-def coloc(cell1, cell2) {
+def coloc(cell1, cell2, colocParam) {
     def tool = new RoiTools()
     def cellColoc = []
     for (c1 in cell1) {
         def roiC1 = c1.getROI()
-        def measurementsC1 = c1.getMeasurementList()
         for (c2 in cell2) {
             def roiC2 = c2.getROI()
             if (tool.areaContains(roiC1, roiC2.getCentroidX(), roiC2.getCentroidY())) {
+                if (colocParam) c1.getMeasurementList().addMeasurement("Cy3-Cy5-DAPI colocalization", 1)
                 cellColoc << PathObjectTools.transformObject(c1, null, true)
                 break
             }
@@ -185,31 +185,34 @@ for (entry in project.getImageList()) {
 
         println '--- Colocalization ---'
         // Find EGFP cells colocalized with DAPI nuclei
-        def egfpDapiCells = coloc(egfpCells, dapiCells)
+        def egfpDapiCells = coloc(egfpCells, dapiCells, false)
         print(egfpDapiCells.size() + '/' + egfpCells.size() + ' EGFP cells colocalized with DAPI nuclei')
 
         // Find Cy3 cells colocalized with DAPI nuclei
-        def cy3DapiCells = coloc(cy3Cells, dapiCells)
+        def cy3DapiCells = coloc(cy3Cells, dapiCells, false)
         print(cy3DapiCells.size() + '/' + cy3Cells.size() + ' Cy3 cells colocalized with DAPI nuclei')
 
         // Find Cy5 cells colocalized with DAPI nuclei
-        def cy5DapiCells = coloc(cy5Cells, dapiCells)
+        def cy5DapiCells = coloc(cy5Cells, dapiCells, false)
         print(cy5DapiCells.size() + '/' + cy5Cells.size() + ' Cy5 cells colocalized with DAPI nuclei')
 
         // Find Cy3-DAPI cells colocalized with Cy5-DAPI cells
-        def cy3Cy5Cells = coloc(cy3DapiCells, cy5DapiCells)
+        def cy3Cy5Cells = coloc(cy3DapiCells, cy5DapiCells, true)
         print(cy3Cy5Cells.size() + '/' + cy3DapiCells.size() + ' Cy3-DAPI cells colocalized with Cy5-DAPI cells')
 
         // Find Cy5-DAPI cells colocalized with Cy3-DAPI cells
-        def cy5Cy3Cells = coloc(cy5DapiCells, cy3DapiCells)
+        def cy5Cy3Cells = coloc(cy5DapiCells, cy3DapiCells, true)
         print(cy5Cy3Cells.size() + '/' + cy5DapiCells.size() + ' Cy5-DAPI cells colocalized with Cy3-DAPI cells')
+        cy5Cy3Cells.getAt(0).getMeasurementList().getMeasurementValue("Coloc")
+        cy5Cy3Cells.getAt(1).getMeasurementList().getMeasurementValue("Coloc")
+        cy5Cy3Cells.getAt(2).getMeasurementList().getMeasurementValue("Coloc")
 
         // Find EGFP-DAPI cells colocalized with Cy3-DAPI cells
-        def egfpCy3Cells = coloc(egfpDapiCells, cy3DapiCells)
+        def egfpCy3Cells = coloc(egfpDapiCells, cy3DapiCells, false)
         print(egfpCy3Cells.size() + '/' + egfpDapiCells.size() + ' EGFP-DAPI cells colocalized with Cy3-DAPI cells')
 
         // Find EGFP-DAPI cells colocalized with Cy3-DAPI cells
-        def egfpCy5Cells = coloc(egfpDapiCells, cy5DapiCells)
+        def egfpCy5Cells = coloc(egfpDapiCells, cy5DapiCells, false)
         print(egfpCy5Cells.size() + '/' + egfpDapiCells.size() + ' EGFP-DAPI cells colocalized with Cy5-DAPI cells')
 
         // Save results
