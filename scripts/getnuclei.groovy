@@ -43,9 +43,10 @@ def resultsDir = buildFilePath(imageDir, '/Results')
 if (!fileExists(resultsDir)) mkdirs(resultsDir)
 def resultsFile = new File(buildFilePath(resultsDir, 'Results.csv'))
 resultsFile.createNewFile()
-def resHeaders = 'Image name\tAnnotation name\tArea (um2)\tNb DAPI\tNb EGFP\tEGFP mean intensity' +
-        '\tNb EGFP-DAPI\tEGFP-DAPI mean intensity\tNb Cy3\tCy3 mean intensity\tNb Cy3-DAPI\tCy3-DAPI mean intensity\tNb Cy5\tCy5 mean intensity' +
-        '\tNb Cy5-DAPI\tCy5-DAPI mean intensity\tNb Cy3-Cy5-DAPI\tCy3-Cy5-DAPI mean intensity in Cy3 channel\tNb Cy5-Cy3-DAPI\tCy5-Cy3-DAPI mean intensity in Cy5 channel' +
+def resHeaders = 'Image name\tAnnotation name\tArea (um2)\tNb DAPI\tEGFP bg median intensity\tNb EGFP\tEGFP mean intensity' +
+        '\tNb EGFP-DAPI\tEGFP-DAPI mean intensity\tCy3 bg median intensity\tNb Cy3\tCy3 mean intensity\tNb Cy3-DAPI\tCy3-DAPI mean intensity' +
+        '\tCy5 bg median intensity\tNb Cy5\tCy5 mean intensity\tNb Cy5-DAPI\tCy5-DAPI mean intensity\tNb Cy3-Cy5-DAPI' +
+        '\tCy3-Cy5-DAPI mean intensity in Cy3 channel\tNb Cy5-Cy3-DAPI\tCy5-Cy3-DAPI mean intensity in Cy5 channel' +
         '\tNb Cy3-EGFP-DAPI\t\'Nb Cy5-EGFP-DAPI\n'
 resultsFile.write(resHeaders)
 
@@ -217,9 +218,9 @@ for (entry in project.getImageList()) {
 
         // Save results
         def results = imgNameWithOutExt + '\t' + an.getName() + '\t' + an.getROI().getScaledArea(pixelWidth, pixelWidth) + '\t' + dapiCells.size() +
-                '\t' + egfpCells.size() + '\t'+ getObjectsIntensity(egfpCells, 'EGFP', bgEgfpInt) + '\t' + egfpDapiCells.size() + '\t' + getObjectsIntensity(egfpDapiCells, 'EGFP', bgEgfpInt) +
-                '\t' + cy3Cells.size() + '\t' + getObjectsIntensity(cy3Cells, 'Cy3', bgCy3Int) + '\t' + cy3DapiCells.size() + '\t' + getObjectsIntensity(cy3DapiCells, 'Cy3', bgCy3Int) +
-                '\t' + cy5Cells.size() + '\t' + getObjectsIntensity(cy5Cells, 'Cy5', bgCy5Int) + '\t' + cy5DapiCells.size() + '\t' + getObjectsIntensity(cy5DapiCells, 'Cy5', bgCy5Int) +
+                '\t' + bgEgfpInt + '\t' + egfpCells.size() + '\t'+ getObjectsIntensity(egfpCells, 'EGFP', bgEgfpInt) + '\t' + egfpDapiCells.size() + '\t' + getObjectsIntensity(egfpDapiCells, 'EGFP', bgEgfpInt) +
+                '\t' + bgCy3Int + '\t' + cy3Cells.size() + '\t' + getObjectsIntensity(cy3Cells, 'Cy3', bgCy3Int) + '\t' + cy3DapiCells.size() + '\t' + getObjectsIntensity(cy3DapiCells, 'Cy3', bgCy3Int) +
+                '\t' + bgCy5Int + '\t' + cy5Cells.size() + '\t' + getObjectsIntensity(cy5Cells, 'Cy5', bgCy5Int) + '\t' + cy5DapiCells.size() + '\t' + getObjectsIntensity(cy5DapiCells, 'Cy5', bgCy5Int) +
                 '\t' + cy3Cy5Cells.size() + '\t' + getObjectsIntensity(cy3Cy5Cells, 'Cy3', bgCy3Int) + '\t' + cy5Cy3Cells.size() + '\t' + getObjectsIntensity(cy5Cy3Cells, 'Cy5', bgCy5Int) +
                 '\t' + egfpCy3Cells.size() + '\t' + egfpCy5Cells.size()  + '\n'
         resultsFile << results
