@@ -14,6 +14,10 @@ minIntensityCy3 = 1.4
 // Cy5 cells
 minCellSizeCy5 = 40
 minIntensityCy5 = 1.2
+
+// Max cells size
+maxCellSize = 600
+
 //--------------------------------------------------------------------------------------------------------------------//
 
 
@@ -78,6 +82,7 @@ def detectCells(imageData, an, channel, pathModel, probThreshold, cellsClass, pi
     stardist.detectObjects(imageData, an, true)
     def cells = getDetectionObjects().findAll{it.getPathClass() == cellsClass
             && it.getROI().getScaledArea(pixelWidth, pixelWidth) > minCellSize
+            && it.getROI().getScaledArea(pixelWidth, pixelWidth) < maxCellSize
             && it.getMeasurementList().getMeasurementValue(channel +': Median') > (minIntensityPercentage*bgInt)
             && an.getROI().contains(it.getROI().getCentroidX(), it.getROI().getCentroidY())}
     println 'Nb ' + channel + ' cells = ' + cells.size() + ' (' + (getDetectionObjects().findAll{it.getPathClass() == cellsClass}.size() - cells.size()) + ' filtered out)'
@@ -88,14 +93,16 @@ def detectCells(imageData, an, channel, pathModel, probThreshold, cellsClass, pi
 def coloc(cell1, cell2, colocParam) {
     def tool = new RoiTools()
     def cellColoc = []
-    for (c1 in cell1) {
-        def roiC1 = c1.getROI()
-        for (c2 in cell2) {
-            def roiC2 = c2.getROI()
-            if (tool.areaContains(roiC1, roiC2.getCentroidX(), roiC2.getCentroidY())) {
-                if (colocParam) c1.getMeasurementList().addMeasurement("Cy3-Cy5-DAPI colocalization", 1)
-                cellColoc << PathObjectTools.transformObject(c1, null, true)
-                break
+    if (cell1.size() !=0 && cell2 !=0) {
+        for (c1 in cell1) {
+            def roiC1 = c1.getROI()
+            for (c2 in cell2) {
+                def roiC2 = c2.getROI()
+                if (tool.areaContains(roiC1, roiC2.getCentroidX(), roiC2.getCentroidY())) {
+                    if (colocParam) c1.getMeasurementList().addMeasurement("Cy3-Cy5-DAPI colocalization", 1)
+                    cellColoc << PathObjectTools.transformObject(c1, null, true)
+                    break
+                }
             }
         }
     }
