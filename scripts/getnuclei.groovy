@@ -99,7 +99,8 @@ def coloc(cell1, cell2, colocParam) {
             for (c2 in cell2) {
                 def roiC2 = c2.getROI()
                 if (tool.areaContains(roiC1, roiC2.getCentroidX(), roiC2.getCentroidY())) {
-                    if (colocParam) c1.getMeasurementList().addMeasurement("Cy3-Cy5-DAPI colocalization", 1)
+                    if (colocParam)
+                        c1.getMeasurementList().addMeasurement("Cy3-Cy5-DAPI colocalization", 1)
                     cellColoc << PathObjectTools.transformObject(c1, null, true)
                     break
                 }
@@ -211,9 +212,10 @@ for (entry in project.getImageList()) {
         // Find Cy5-DAPI cells colocalized with Cy3-DAPI cells
         def cy5Cy3Cells = coloc(cy5DapiCells, cy3DapiCells, true)
         print(cy5Cy3Cells.size() + '/' + cy5DapiCells.size() + ' Cy5-DAPI cells colocalized with Cy3-DAPI cells')
-        cy5Cy3Cells.getAt(0).getMeasurementList().getMeasurementValue("Coloc")
-        cy5Cy3Cells.getAt(1).getMeasurementList().getMeasurementValue("Coloc")
-        cy5Cy3Cells.getAt(2).getMeasurementList().getMeasurementValue("Coloc")
+        // ????
+        //cy5Cy3Cells.get(0).getMeasurementList().getMeasurementValue("Coloc")
+        //cy5Cy3Cells.get(1).getMeasurementList().getMeasurementValue("Coloc")
+        //cy5Cy3Cells.get(2).getMeasurementList().getMeasurementValue("Coloc")
 
         // Find EGFP-DAPI cells colocalized with Cy3-DAPI cells
         def egfpCy3Cells = coloc(egfpDapiCells, cy3DapiCells, false)

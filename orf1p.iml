@@ -26,7 +26,7 @@
     <orderEntry type="module-library">
       <library>
         <CLASSES>
-          <root url="jar://$USER_HOME$/QuPath/v0.3/extensions/qupath-extension-stardist-0.3.0.jar!/" />
+          <root url="jar://$USER_HOME$/QuPath/extensions/qupath-extension-stardist-0.3.0.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
