@@ -15,7 +15,7 @@ minIntensityCy3 = 1.4
 minCellSizeCy5 = 40
 minIntensityCy5 = 1.2
 
-// Max cells size
+// All cells
 maxCellSize = 600
 
 //--------------------------------------------------------------------------------------------------------------------//
@@ -51,7 +51,7 @@ def resHeaders = 'Image name\tAnnotation name\tArea (um2)\tNb DAPI\tEGFP bg medi
         '\tNb EGFP-DAPI\tEGFP-DAPI mean intensity\tCy3 bg median intensity\tNb Cy3\tCy3 mean intensity\tNb Cy3-DAPI\tCy3-DAPI mean intensity' +
         '\tCy5 bg median intensity\tNb Cy5\tCy5 mean intensity\tNb Cy5-DAPI\tCy5-DAPI mean intensity\tNb Cy3-Cy5-DAPI' +
         '\tCy3-Cy5-DAPI mean intensity in Cy3 channel\tNb Cy5-Cy3-DAPI\tCy5-Cy3-DAPI mean intensity in Cy5 channel' +
-        '\tNb Cy3-EGFP-DAPI\t\'Nb Cy5-EGFP-DAPI\n'
+        '\tNb Cy3-EGFP-DAPI\tNb Cy5-EGFP-DAPI\n'
 resultsFile.write(resHeaders)
 
 // Define ClassPaths
@@ -75,7 +75,7 @@ def buildStarDistModel(pathModel, threshold, channel, cellClass) {
 }
 
 // Detect cells in a specific annotation and channel
-def detectCells(imageData, an, channel, pathModel, probThreshold, cellsClass, pixelWidth, minCellSize, bgInt, minIntensityPercentage) {
+def detectCells(imageData, an, channel, pathModel, probThreshold, cellsClass, pixelWidth, minCellSize, maxCellSize, bgInt, minIntensityPercentage) {
     println '--- Finding ' + channel + ' cells ---'
     println 'Background median intensity in ' + channel + ' channel = ' + bgInt
     def stardist = buildStarDistModel(pathModel, probThreshold, channel, cellsClass)
@@ -93,7 +93,7 @@ def detectCells(imageData, an, channel, pathModel, probThreshold, cellsClass, pi
 def coloc(cell1, cell2, colocParam) {
     def tool = new RoiTools()
     def cellColoc = []
-    if (cell1.size() !=0 && cell2 !=0) {
+    if (cell1.size() != 0 && cell2.size() !=0) {
         for (c1 in cell1) {
             def roiC1 = c1.getROI()
             for (c2 in cell2) {
@@ -184,13 +184,13 @@ for (entry in project.getImageList()) {
         clearAllObjects()
         addObject(an)
         def dapiCells = detectCells(imageData, an, 'DAPI', pathModel, 0.6, dapiCellsClass,
-                pixelWidth, minCellSizeDapi, bgDapiInt, minIntensityDapi)
+                pixelWidth, minCellSizeDapi, maxCellSize, bgDapiInt, minIntensityDapi)
         def egfpCells = detectCells(imageData, an, 'EGFP', pathModel, 0.4, egfpCellsClass,
-                pixelWidth, minCellSizeEgfp, bgEgfpInt, minIntensityEgfp)
+                pixelWidth, minCellSizeEgfp, maxCellSize, bgEgfpInt, minIntensityEgfp)
         def cy3Cells = detectCells(imageData, an, 'Cy3', pathModel, 0.4, cy3CellsClass,
-                pixelWidth, minCellSizeCy3, bgCy3Int, minIntensityCy3)
+                pixelWidth, minCellSizeCy3, maxCellSize, bgCy3Int, minIntensityCy3)
         def cy5Cells = detectCells(imageData, an, 'Cy5', pathModel, 0.6, cy5CellsClass,
-                pixelWidth, minCellSizeCy5, bgCy5Int, minIntensityCy5)
+                pixelWidth, minCellSizeCy5, maxCellSize, bgCy5Int, minIntensityCy5)
 
         println '--- Colocalization ---'
         // Find EGFP cells colocalized with DAPI nuclei
@@ -212,10 +212,6 @@ for (entry in project.getImageList()) {
         // Find Cy5-DAPI cells colocalized with Cy3-DAPI cells
         def cy5Cy3Cells = coloc(cy5DapiCells, cy3DapiCells, true)
         print(cy5Cy3Cells.size() + '/' + cy5DapiCells.size() + ' Cy5-DAPI cells colocalized with Cy3-DAPI cells')
-        // ????
-        //cy5Cy3Cells.get(0).getMeasurementList().getMeasurementValue("Coloc")
-        //cy5Cy3Cells.get(1).getMeasurementList().getMeasurementValue("Coloc")
-        //cy5Cy3Cells.get(2).getMeasurementList().getMeasurementValue("Coloc")
 
         // Find EGFP-DAPI cells colocalized with Cy3-DAPI cells
         def egfpCy3Cells = coloc(egfpDapiCells, cy3DapiCells, false)
