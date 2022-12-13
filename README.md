@@ -11,7 +11,7 @@
 
 4 channels: 
   1. *DAPI:* nuclei
-  2. *EGFP:* microglia ?
+  2. *EGFP:* microglia (?)
   3. *Cy3:* ORF1p cells
   4. *Cy5:* NeuN cells
 
