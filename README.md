@@ -17,6 +17,7 @@
 
 ### Plugin description
 
+Version 1:
 * Detect nuclei, microglia and ORF1p and NeuN cells with Stardist
 * Compute their colocalization
 
