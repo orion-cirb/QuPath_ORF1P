@@ -20,6 +20,11 @@
 * Detect nuclei, microglia and ORF1p and NeuN cells with Stardist
 * Compute their colocalization
 
+Version 2:
+* Ignore EGFP channel
+* Compute background noise automatically in each annotation by taking into account every pixel that is not belonging to a cell (after Stardist detection)
+* Cell intensity threshold = background mean intensity + background intensity std
+
 ### Dependencies
 
 * **Stardist** QuPath extension +  *dsb2018_heavy_augment.pb* model
@@ -28,5 +33,3 @@
 
 1. Version 1 (*getnuclei.groovy*) released on September 1, 2022.
 2. Version 2 (*getnuclei_improved.groovy*) released on December 13, 2022:
-    * vds
-    * 
