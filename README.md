@@ -32,5 +32,6 @@ Version 2:
 
 ### Version history
 
-1. Version 1 (*getnuclei.groovy*) released on September 1, 2022.
-2. Version 2 (*getnuclei_improved.groovy*) released on December 13, 2022:
+Version 1 (*getnuclei.groovy*) released on September 1, 2022.
+
+Version 2 (*getnuclei_improved.groovy*) released on December 13, 2022:
