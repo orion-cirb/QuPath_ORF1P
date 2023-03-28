@@ -31,7 +31,7 @@ Version 2:
 ### Dependencies
 
 * **Stardist** QuPath extension +  *dsb2018_heavy_augment.pb* model
-* **Cellpose** QuPath extension + *Cellpose** conda environment + *cyto2* model
+* **Cellpose** QuPath extension and conda environment + *cyto2* model
 
 ### Version history
 
