@@ -2,7 +2,7 @@
 
 * **Developed for:** Tom
 * **Team:** Proschiantz
-* **Date:** September 2022
+* **Date:** March 2022
 * **Software:** QuPath
 
 ### Images description
@@ -23,15 +23,18 @@ Version 1:
 
 Version 2:
 * Ignore EGFP channel
-* Compute background noise automatically in each annotation by taking into account every pixel that is not belonging to a cell (after Stardist detection)
-* Cell intensity threshold = background mean intensity + background intensity std
+* Detect nuclei with Stardist and ORF1p and NeuN cells with Cellpose
+* Compute their colocalization
+* Compute background noise automatically in each annotation by taking into account every pixel that is not belonging to a cell (after Stardist/Cellpose detection)
+* Handle hierarchy by skipping the analysis of parents regions
 
 ### Dependencies
 
 * **Stardist** QuPath extension +  *dsb2018_heavy_augment.pb* model
+* *Cellpose** QuPath extension + *Cellpose** conda environment + *cyto2* model
 
 ### Version history
 
 Version 1 (*getnuclei.groovy*) released on September 1, 2022.
 
-Version 2 (*getnuclei_improved.groovy*) released on December 13, 2022.
+Version 2 (*getnuclei_improved.groovy*) released on March 28, 2022.
