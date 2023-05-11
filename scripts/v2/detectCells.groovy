@@ -1,6 +1,6 @@
 //------------------------------------------- PARAMETERS TO TUNE -----------------------------------------------------//
 // NUCLEI DETECTION WITH STARDIST
-def probabilityThreshold = 0.8 // between 0 and 1: if you decrease it, you will detect more cells
+def probabilityThreshold = 0.75 // between 0 and 1: if you decrease it, you will detect more cells
 
 // SIZE FILTERING
 // DAPI nuclei
@@ -16,14 +16,14 @@ def cy3MaxArea = 300
 // INTENSITY FILTERING
 // Cell mean int > (C1 * bg mean int + C2 * bg int SD)
 // DAPI nuclei
-def dapiC1 = 1
-def dapiC2 = 1
+def dapiC1 = 0
+def dapiC2 = 0
 // NeuN cells
-def cy5C1 = 1
-def cy5C2 = 1
+def cy5C1 = 0
+def cy5C2 = 0
 // ORF1p cells
-def cy3C1 = 1
-def cy3C2 = 1
+def cy3C1 = 0
+def cy3C2 = 0
 
 
 //----------------------------------------------- PIPELINE -----------------------------------------------------------//
@@ -72,11 +72,9 @@ globalResultsFile.write(globalHeaders)
 def cellsResultsFile = new File(buildFilePath(resultsDir, 'cellsResults.csv'))
 cellsResultsFile.createNewFile()
 def cellsHeaders = 'Image name\tRegion name\tNuc area\tNuc circularity\t' +
-        'Nuc DAPI int mean\tNuc DAPI int sd\tNuc Cy5 int mean\tNuc Cy5 int sd\t' +
-        'Nuc Cy3 int mean\tNuc Cy3 int sd\t' +
-        'is Cy5?\tCy5 area\tCy5 int mean\tCy5 int sd\t' +
-        'is Cy3?\tCy3 area\tCy3 int mean\tCy3 int sd\t' +
-        'Cyto Cy5 area\tCyto Cy5 int mean\tCyto Cy3 area\tCyto Cy3 int mean\n'
+        'Nuc DAPI int mean\tNuc DAPI int sd\tNuc Cy5 int mean\tNuc Cy5 int sd\tNuc Cy3 int mean\tNuc Cy3 int sd\t' +
+        'is Cy5?\tCy5 area\tCy5 int mean\tCy5 int sd\tCy5 Cy3 int mean\tCy5 Cy3 int sd\t' +
+        'is Cy3?\tCy3 area\tCy3 int mean\tCy3 int sd\tCy3 Cy5 int mean\tCy3 Cy5 int sd\n'
 cellsResultsFile.write(cellsHeaders)
 
 
@@ -107,7 +105,7 @@ for (entry in project.getImageList()) {
     def anNb = annotations.size()
     def anId = 1
     for (an in annotations) {
-        def regionName = an.getName().replaceAll("/", "-")
+        def regionName = an.getName().replaceAll("/", "-").replaceAll(",", "-").replaceAll(" ", "")
         if(an.hasChildObjects()) {
             println '--- Skipping region ' + regionName + ' ('+anId+'/'+anNb+') ---'
         } else {
@@ -160,19 +158,14 @@ for (entry in project.getImageList()) {
             println '- Saving results -'
             for (cell in cells) {
                 def nucleusParams = cell.getNucleusParams(dapiBgMean, cy5BgMean, cy3BgMean)
-                def cy5Params = cell.getCy5Params(cy5BgMean)
-                def cy3Params = cell.getCy3Params(cy3BgMean)
+                def cy5Params = cell.getCy5Params(cy5BgMean, cy3BgMean)
+                def cy3Params = cell.getCy3Params(cy3BgMean, cy5BgMean)
 
                 def cellResults = imgNameWithOutExt + '\t' + parentsName + '\t' + nucleusParams[0] + '\t' + nucleusParams[1] +
-                        '\t' + nucleusParams[2] + '\t' + nucleusParams[3] + '\t' + nucleusParams[4] + '\t' + nucleusParams[5] +
-                        '\t' + nucleusParams[6] + '\t' + nucleusParams[7] +
-                        '\t' + cy5Params[0] + '\t' + cy5Params[1] + '\t' + cy5Params[2] + '\t' + cy5Params[3] +
-                        '\t' + cy3Params[0] + '\t' + cy3Params[1] + '\t' + cy3Params[2] + '\t' + cy3Params[3]
-                if(cell.isCy5) cellResults += '\t' + (cy5Params[1]-nucleusParams[0]).round(3) + '\t' + ((cy5Params[1]*cy5Params[2]-nucleusParams[0]*nucleusParams[4])/(cy5Params[1]-nucleusParams[0])).round(3)
-                else cellResults += '\t' + null + '\t' + null
-                if(cell.isCy3) cellResults += '\t' + (cy3Params[1]-nucleusParams[0]).round(3) + '\t' + ((cy3Params[1]*cy3Params[2]-nucleusParams[0]*nucleusParams[6])/(cy3Params[1]-nucleusParams[0])).round(3)
-                else cellResults += '\t' + null + '\t' + null
-                cellsResultsFile << cellResults + '\n'
+                        '\t' + nucleusParams[2] + '\t' + nucleusParams[3] + '\t' + nucleusParams[4] + '\t' + nucleusParams[5] + '\t' + nucleusParams[6] + '\t' + nucleusParams[7] +
+                        '\t' + cy5Params[0] + '\t' + cy5Params[1] + '\t' + cy5Params[2] + '\t' + cy5Params[3] + '\t' + cy5Params[4] + '\t' + cy5Params[5] +
+                        '\t' + cy3Params[0] + '\t' + cy3Params[1] + '\t' + cy3Params[2] + '\t' + cy3Params[3] + '\t' + cy3Params[4] + '\t' + cy3Params[5] + '\n'
+                cellsResultsFile << cellResults
             }
 
             def cellsCount = countCells(cells)
@@ -209,6 +202,7 @@ def buildStarDistModel(pathModel, channel, probThreshold, cellClass) {
             .pixelSize(0.5)            // Resolution for detection
             .channels(channel)                 // Select detection channel
             .threshold(probThreshold)          // Prediction threshold
+            .simplify(0)
             .constrainToParent(false)
             .measureShape()                    // Add shape measurements
             .measureIntensity()                // Add intensity measurements
@@ -219,7 +213,7 @@ def buildStarDistModel(pathModel, channel, probThreshold, cellClass) {
 // Build Cellpose model
 def buildCellposeModel(pathModel, channel, diameter, overlap, cellClass) {
     return Cellpose2D.builder(pathModel)
-            .preprocess(ImageOps.Filters.median(1))     // List of preprocessing ImageOps to run on the images before exporting them
+            .preprocess(ImageOps.Filters.median(2))     // List of preprocessing ImageOps to run on the images before exporting them
             .normalizePercentiles(1, 99)                // Percentile normalization
             .pixelSize(0.5)                             // Resolution for detection
             .channels(channel)                          // Select detection channel(s)
@@ -227,6 +221,8 @@ def buildCellposeModel(pathModel, channel, diameter, overlap, cellClass) {
 //          .flowThreshold(0.5)                         // Threshold for the flows, defaults to 0.4
             .diameter(diameter)                         // Median object diameter. Set to 0.0 for the `bact_omni` model or for automatic computation
             .setOverlap(overlap)                             // Overlap between tiles (in pixels) that the QuPath Cellpose Extension will extract. Defaults to 2x the diameter or 60 px if the diameter is set to 0
+            .simplify(1.5)
+            .constrainToParent(false)
             .measureShape()                             // Add shape measurements
             .measureIntensity()                         // Add intensity measurements (in all compartments)
             .classify(cellClass)
@@ -364,14 +360,16 @@ class Cell {
         this.cy5 = cy5
     }
 
-    def getCy5Params(cy5Bg) {
+    def getCy5Params(cy5Bg, cy3Bg) {
         if (this.isCy5) {
             def area = this.cy5.getMeasurementList().getMeasurementValue('Area µm^2').round(3)
             def cy5IntMean = (this.cy5.getMeasurementList().getMeasurementValue('Cy5: Mean') - cy5Bg).round(3)
             def cy5IntSD = this.cy5.getMeasurementList().getMeasurementValue('Cy5: Std.Dev.').round(3)
-            return [this.isCy5, area, cy5IntMean, cy5IntSD]
+            def cy5cy3IntMean = (this.cy5.getMeasurementList().getMeasurementValue('Cy3: Mean') - cy3Bg).round(3)
+            def cy5cy3IntSD = this.cy5.getMeasurementList().getMeasurementValue('Cy3: Std.Dev.').round(3)
+            return [this.isCy5, area, cy5IntMean, cy5IntSD, cy5cy3IntMean, cy5cy3IntSD]
         } else {
-            return [this.isCy5, null, null, null]
+            return [this.isCy5, null, null, null, null, null]
         }
     }
 
@@ -380,14 +378,16 @@ class Cell {
         this.cy3 = cy3
     }
 
-    def getCy3Params(cy3Bg) {
+    def getCy3Params(cy3Bg, cy5Bg) {
         if (this.isCy3) {
             def area = this.cy3.getMeasurementList().getMeasurementValue('Area µm^2').round(3)
             def cy3IntMean = (this.cy3.getMeasurementList().getMeasurementValue('Cy3: Mean') - cy3Bg).round(3)
             def cy3IntSD = this.cy3.getMeasurementList().getMeasurementValue('Cy3: Std.Dev.').round(3)
-            return [this.isCy3, area, cy3IntMean, cy3IntSD]
+            def cy3Cy5IntMean = (this.cy3.getMeasurementList().getMeasurementValue('Cy5: Mean') - cy5Bg).round(3)
+            def cy3cy5IntSD = this.cy3.getMeasurementList().getMeasurementValue('Cy5: Std.Dev.').round(3)
+            return [this.isCy3, area, cy3IntMean, cy3IntSD, cy3Cy5IntMean, cy3cy5IntSD]
         } else {
-            return [this.isCy3, null, null, null]
+            return [this.isCy3, null, null, null, null, null]
         }
     }
 }
