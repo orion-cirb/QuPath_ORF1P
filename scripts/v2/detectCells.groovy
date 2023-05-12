@@ -8,10 +8,10 @@ def dapiMinArea = 20 // in µm2
 def dapiMaxArea = 200
 // NeuN cells
 def cy5MinArea = 40
-def cy5MaxArea = 300
+def cy5MaxArea = 400
 // ORF1p cells
 def cy3MinArea = 40
-def cy3MaxArea = 300
+def cy3MaxArea = 400
 
 // INTENSITY FILTERING
 // Cell mean int > (C1 * bg mean int + C2 * bg int SD)
