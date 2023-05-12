@@ -5,13 +5,13 @@ def probabilityThreshold = 0.75 // between 0 and 1: if you decrease it, you will
 // SIZE FILTERING
 // DAPI nuclei
 def dapiMinArea = 20 // in µm2
-def dapiMaxArea = 200
+def dapiMaxArea = 400
 // NeuN cells
 def cy5MinArea = 40
-def cy5MaxArea = 400
+def cy5MaxArea = 500
 // ORF1p cells
 def cy3MinArea = 40
-def cy3MaxArea = 400
+def cy3MaxArea = 500
 
 // INTENSITY FILTERING
 // Cell mean int > (C1 * bg mean int + C2 * bg int SD)
