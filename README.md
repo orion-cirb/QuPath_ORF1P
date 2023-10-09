@@ -1,7 +1,7 @@
 # QuPath_ORF1P
 
 * **Developed for:** Tom
-* **Team:** Proschiantz
+* **Team:** Prochiantz
 * **Date:** March 2022
 * **Software:** QuPath
 
